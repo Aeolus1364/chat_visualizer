@@ -8,6 +8,7 @@ def twitch_reader(token, channel, time_step, max_time=0, max_msg=0, remove_dupli
     sock = socket.socket()
     sock.connect((SERVER, PORT))
 
+    # IRC authentication
     sock.send(f"PASS {token}\n".encode('utf-8'))
     sock.send(f"NICK {NICKNAME}\n".encode('utf-8'))
     sock.send(f"JOIN {channel}\n".encode('utf-8'))
@@ -21,6 +22,7 @@ def twitch_reader(token, channel, time_step, max_time=0, max_msg=0, remove_dupli
     steps_taken = 0
     msg_count = 0
 
+    # setting up df 
     df = pd.DataFrame(columns=['name', 'time', 'freq'])
 
     initial_time = time.time()
@@ -31,6 +33,8 @@ def twitch_reader(token, channel, time_step, max_time=0, max_msg=0, remove_dupli
         while True:
             try:
                 resp = sock.recv(2048).decode('utf-8')
+
+            # doesn't crash if there is a decoding error
             except UnicodeDecodeError:
                 print('Unicode Decode Error')
                 continue
@@ -52,6 +56,8 @@ def twitch_reader(token, channel, time_step, max_time=0, max_msg=0, remove_dupli
                     for w in msg:
                         if msg_begin:
                             words.append(w)
+                        
+                        # in IRC text, message begins after channel statement
                         if w == channel:
                             msg_begin = True
 
@@ -66,9 +72,7 @@ def twitch_reader(token, channel, time_step, max_time=0, max_msg=0, remove_dupli
                         # casting words to a set removes duplicate entries
                         words = set(words)
                             
-                    # print(words)
-
-                    # adds words from current message to the current time step's Counter
+                    # adds words from current message to the current time step's Counter, and master Counter
                     active_counter.update(words)
                     master_counter.update(words)
 
@@ -93,7 +97,9 @@ def twitch_reader(token, channel, time_step, max_time=0, max_msg=0, remove_dupli
                         steps_taken += 1
                     
             msg_count += 1
-        
+
+            # ends loop if max_msg or max_time is reached
+            # or if the limit is zero, doesn't end loop
             if max_msg and msg_count > max_msg:
                 break
             if max_time and elapsed_time > max_time:
@@ -104,8 +110,8 @@ def twitch_reader(token, channel, time_step, max_time=0, max_msg=0, remove_dupli
 
     return df, master_counter, time_step
 
+# following code only runs if you run data_collector specifically
 if __name__ == "__main__":
-    # reads token from external file to keep secret
     with open("secret") as f: token = f.read().split("=")[1]
 
     print('Twitch Data Collector')

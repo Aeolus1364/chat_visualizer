@@ -4,6 +4,9 @@ import plotly.express as px
 # reads token from external file to keep secret
 with open("secret") as f: token = f.read().split("=")[1]
 
+# User Input and Setup
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 print('Welcome to Twitch Chat Analysis!')
 
 print()
@@ -56,6 +59,8 @@ print('Importing data renderer...')
 import data_renderer
 print('Done')
 
+# Data Collection
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 print()
 print('Starting data collection...')
@@ -65,11 +70,15 @@ data = data_collector.twitch_reader(token, channel, time_step, max_time=time_lim
 df, counter, ts = data
 print('Collection complete!')
 
+
 print()
 print('Saving data...')
 with open(f_name + '.raw', 'wb') as f:
     pickle.dump(data, f)
 print('Done')
+
+# Data Processing
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 print()
 print('Starting data processing...')
@@ -81,6 +90,9 @@ print('Saving data...')
 with open(f_name + '.ttv', 'wb') as f:
     pickle.dump(save_data, f)
 print('Done')
+
+# Displaying Data
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 print()
 print('Let\'s take a look at your data!')
