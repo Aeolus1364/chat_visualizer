@@ -1,0 +1,8 @@
+data_collector_old.py
+data_renderer_old.py
+*.raw
+*.ttv
+*.pyc
+.vscode/
+__pycache__/
+secret

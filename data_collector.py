@@ -1,15 +1,16 @@
 import socket, time, math, pickle
 from collections import Counter
 import pandas as pd
-
-SERVER = 'irc.chat.twitch.tv'
-PORT = 6667
-NICKNAME = 'chat_visualizer'
-
-# reads token from external file to keep secret
-with open("secret") as f: token = f.read().split("=")[1]
+import data_processor
 
 def twitch_reader(channel, time_step, max_time=0, max_msg=0, remove_duplicates=True):
+    SERVER = 'irc.chat.twitch.tv'
+    PORT = 6667
+    NICKNAME = 'chat_visualizer'
+
+    # reads token from external file to keep secret
+    with open("secret") as f: token = f.read().split("=")[1]
+
     channel = '#' + channel
 
     sock = socket.socket()
@@ -111,34 +112,44 @@ def twitch_reader(channel, time_step, max_time=0, max_msg=0, remove_duplicates=T
 
     return df, master_counter, time_step
 
+if __name__ == "__main__":
+    print('Twitch Data Collector')
+    print('Enter a file name:')
+    f_name = input('> ')
 
-print('Twitch Data Collector')
-print('Enter a file name:')
-f_name = input('> ')
+    print('Enter a channel name:')
+    channel = input('> ')
 
-print('Enter a channel name:')
-channel = input('> ')
+    while True:
+        print('Enter a collection time in seconds:')
+        print('(or enter 0 for no limit, cancel with Ctrl + C)')
+        try:
+            length = int(input('> '))
+        except ValueError:
+            continue
+        break
 
-while True:
-    print('Enter a collection time in seconds:')
-    print('(or enter 0 for no limit, cancel with Ctrl + C)')
-    try:
-        length = int(input('> '))
-    except ValueError:
-        continue
-    break
+    while True:
+        print('Enter a sample time in seconds:')
+        try:
+            sample_time = int(input('> '))
+        except ValueError:
+            continue
+        break
 
-while True:
-    print('Enter a sample time in seconds:')
-    try:
-        sample_time = int(input('> '))
-    except ValueError:
-        continue
-    break
+    print('Beginning collection...')
 
-print('Beginning collection...')
+    data = twitch_reader(channel, sample_time, max_time=length)
 
-data = twitch_reader(channel, sample_time, max_time=length)
+    # saves collected data to a .raw file, unprocessed data
+    with open(f_name + '.raw', 'wb') as f:
+        pickle.dump(data, f)
 
-with open(f_name + '.raw', 'wb') as f:
-    pickle.dump(data, f)
+    # unpacking data to be processed
+    df, master_counter, time_step = data
+    # processes data using data_processor.py
+    df_processed = data_processor.processor(df, master_counter, time_step)
+
+    # saves processed dataframe into a .ttv file which can be read by data_renderer.py and displayed
+    with open(f_name + '.ttv', 'wb') as f:
+        pickle.dump(df_processed, f)
