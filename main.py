@@ -85,13 +85,13 @@ print('Done')
 print()
 print('Let\'s take a look at your data!')
 
-print('Type "bar" or "line" to view graphs')
-graph_type = input('> ')
-
-bar_height = processed_df['freq'].max()
-if graph_type == 'bar':
-    fig = px.bar(processed_df, x='name', y='freq', animation_frame='time', color='name', range_y=[0, bar_height])
-elif graph_type == 'line':
-    fig = px.line(processed_df, x='time', y='freq', hover_name='name', color='name', range_y=[0, bar_height])
-
-fig.show()
+while True:
+    print('Type the following names to view graphs, or "quit" to quit:')
+    print('"line" - simple line graph showing message count over time')
+    print('"static bar" - bar graph showing most popular messages')
+    print('"animated bar" - bar graph that animates message count every time step')
+    graph_type = input('> ')
+    if graph_type == 'quit':
+        quit()
+    data_renderer.display_graph(processed_df, counter, graph_type)
+    print()
