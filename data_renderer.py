@@ -11,7 +11,7 @@ def display_graph(df, counter, graph_type):
     elif graph_type == 'animated bar':
         fig = px.bar(df, x='name', y='freq', animation_frame='time', color='name', range_y=[0, bar_height])
     elif graph_type == 'static bar':
-        fig = px.bar(df, x='name', y='freq', color='time')
+        fig = px.bar(df, x='name', y='freq', color='name')
     else:
         graph_ready = False
 
