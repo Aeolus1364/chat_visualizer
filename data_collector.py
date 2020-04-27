@@ -1,8 +1,6 @@
 import socket, time, math, pickle
 from collections import Counter
 import pandas as pd
-import plotly.express as px
-import matplotlib.pyplot as plt
 
 SERVER = 'irc.chat.twitch.tv'
 PORT = 6667
@@ -11,7 +9,7 @@ NICKNAME = 'chat_visualizer'
 # reads token from external file to keep secret
 with open("secret") as f: token = f.read().split("=")[1]
 
-def twitch_reader(channel, time_step, max_time=0, max_msg=0):
+def twitch_reader(channel, time_step, max_time=0, max_msg=0, remove_duplicates=True):
     channel = '#' + channel
 
     sock = socket.socket()
@@ -38,7 +36,12 @@ def twitch_reader(channel, time_step, max_time=0, max_msg=0):
     
     try:
         while True:
-            resp = sock.recv(2048).decode('utf-8')
+            try:
+                resp = sock.recv(2048).decode('utf-8')
+            except UnicodeDecodeError:
+                print('Unicode Decode Error')
+                continue
+
             elapsed_time = time.time() - initial_time
             
             # backend message to keep connection alive
@@ -46,20 +49,31 @@ def twitch_reader(channel, time_step, max_time=0, max_msg=0):
                 sock.send("PONG\n".encode('utf-8'))
 
             else:
+                # if chat is high volume, messages sent together and need to be split by line
                 raw_msg = resp.splitlines()
                 for line in raw_msg:
+                    # for each line, the message is extracted and sent to words list
                     msg = line.split()
-                    # this line is a little confusing, but all it does is remove the ':' from the beginning of the first word 
-                    # it is then cast to set to remove duplicate entries
-                    try:
-                        words = set([msg[3][1:]] + msg[4:])
-                    except IndexError:
-                        print('error')
-                        print(line, words)
-                        break
+                    words = []
+                    msg_begin = False
+                    for w in msg:
+                        if msg_begin:
+                            words.append(w)
+                        if w == channel:
+                            msg_begin = True
 
-                    print(words)
-                    # print(raw_msg.splitlines())
+                    if words:
+                        # removes ':' from beginning of first word
+                        words[0] = words[0][1:]
+                    
+                    # prints out messages for viewing
+                    print(' '.join(words))
+
+                    if remove_duplicates:
+                        # casting words to a set removes duplicate entries
+                        words = set(words)
+                            
+                    # print(words)
 
                     # adds words from current message to the current time step's Counter
                     active_counter.update(words)
@@ -85,7 +99,6 @@ def twitch_reader(channel, time_step, max_time=0, max_msg=0):
                         active_counter = Counter()
                         steps_taken += 1
                     
-                    # print(df)
             msg_count += 1
         
             if max_msg and msg_count > max_msg:
@@ -96,42 +109,36 @@ def twitch_reader(channel, time_step, max_time=0, max_msg=0):
     except KeyboardInterrupt:
         pass
 
-    # for r in range(1):
-    #     for w in unique_words:
-    #         row = df.iloc[r]
-    #         if w in row['name']:
-    #             print(row)
-
-    return df, master_counter
+    return df, master_counter, time_step
 
 
-# print('Twitch Data Collector')
-# print('Enter a file name:')
-# f_name = input('> ')
+print('Twitch Data Collector')
+print('Enter a file name:')
+f_name = input('> ')
 
-# print('Enter a channel name:')
-# channel = input('> ')
+print('Enter a channel name:')
+channel = input('> ')
 
-# while True:
-#     print('Enter a collection time in seconds:')
-#     print('(or enter 0 for no limit, cancel with Ctrl + C)')
-#     try:
-#         length = float(input('> '))
-#     except ValueError:
-#         continue
-#     break
+while True:
+    print('Enter a collection time in seconds:')
+    print('(or enter 0 for no limit, cancel with Ctrl + C)')
+    try:
+        length = int(input('> '))
+    except ValueError:
+        continue
+    break
 
-# while True:
-#     print('Enter a sample time in seconds:')
-#     try:
-#         sample_time = float(input('> '))
-#     except ValueError:
-#         continue
-#     break
+while True:
+    print('Enter a sample time in seconds:')
+    try:
+        sample_time = int(input('> '))
+    except ValueError:
+        continue
+    break
 
-# data = twitch_reader(channel, sample_time, max_time=length)
+print('Beginning collection...')
 
-data = twitch_reader('xqcow', 5, 60)
-f_name = 'xqc'
-with open(f_name + '.ttv', 'wb') as f:
+data = twitch_reader(channel, sample_time, max_time=length)
+
+with open(f_name + '.raw', 'wb') as f:
     pickle.dump(data, f)
