@@ -1,8 +1,8 @@
-import socket, time, math, pickle
+import socket, time, datetime, math, pickle
 from collections import Counter
 import pandas as pd
 
-def twitch_reader(token, channel, time_step, max_time=0, max_msg=0, remove_duplicates=True, SERVER='irc.chat.twitch.tv', PORT=6667, NICKNAME='chat_visualizer'):
+def twitch_reader(token, channel, time_step, max_time=0, max_msg=0, remove_duplicates=True, censor_output=True, SERVER='irc.chat.twitch.tv', PORT=6667, NICKNAME='chat_visualizer'):
     channel = '#' + channel
 
     sock = socket.socket()
@@ -65,8 +65,14 @@ def twitch_reader(token, channel, time_step, max_time=0, max_msg=0, remove_dupli
                         # removes ':' from beginning of first word
                         words[0] = words[0][1:]
                     
-                    # prints out messages for viewing
-                    print(' '.join(words))
+                    if censor_output:
+                        print(f'Messaged {msg_count} recevied at {datetime.datetime.now().time()}')
+                    else:
+                        try:
+                            # prints out messages for viewing
+                            print(' '.join(words))
+                        except:
+                            print('Error displaying message')
 
                     if remove_duplicates:
                         # casting words to a set removes duplicate entries
