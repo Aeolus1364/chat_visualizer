@@ -1,16 +1,8 @@
 import socket, time, math, pickle
 from collections import Counter
 import pandas as pd
-import data_processor
 
-def twitch_reader(channel, time_step, max_time=0, max_msg=0, remove_duplicates=True):
-    SERVER = 'irc.chat.twitch.tv'
-    PORT = 6667
-    NICKNAME = 'chat_visualizer'
-
-    # reads token from external file to keep secret
-    with open("secret") as f: token = f.read().split("=")[1]
-
+def twitch_reader(token, channel, time_step, max_time=0, max_msg=0, remove_duplicates=True, SERVER='irc.chat.twitch.tv', PORT=6667, NICKNAME='chat_visualizer'):
     channel = '#' + channel
 
     sock = socket.socket()
@@ -20,7 +12,7 @@ def twitch_reader(channel, time_step, max_time=0, max_msg=0, remove_duplicates=T
     sock.send(f"NICK {NICKNAME}\n".encode('utf-8'))
     sock.send(f"JOIN {channel}\n".encode('utf-8'))
 
-    
+
     # ignores server join messages
     sock.recv(2048)
     sock.recv(2048)
@@ -113,6 +105,9 @@ def twitch_reader(channel, time_step, max_time=0, max_msg=0, remove_duplicates=T
     return df, master_counter, time_step
 
 if __name__ == "__main__":
+    # reads token from external file to keep secret
+    with open("secret") as f: token = f.read().split("=")[1]
+
     print('Twitch Data Collector')
     print('Enter a file name:')
     f_name = input('> ')
@@ -139,17 +134,8 @@ if __name__ == "__main__":
 
     print('Beginning collection...')
 
-    data = twitch_reader(channel, sample_time, max_time=length)
+    data = twitch_reader(token, channel, sample_time, max_time=length)
 
     # saves collected data to a .raw file, unprocessed data
     with open(f_name + '.raw', 'wb') as f:
         pickle.dump(data, f)
-
-    # unpacking data to be processed
-    df, master_counter, time_step = data
-    # processes data using data_processor.py
-    df_processed = data_processor.processor(df, master_counter, time_step)
-
-    # saves processed dataframe into a .ttv file which can be read by data_renderer.py and displayed
-    with open(f_name + '.ttv', 'wb') as f:
-        pickle.dump(df_processed, f)
