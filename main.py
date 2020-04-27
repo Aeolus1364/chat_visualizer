@@ -1,8 +1,16 @@
 import pickle
 import plotly.express as px
 
-# reads token from external file to keep secret
-with open("secret") as f: token = f.read().split("=")[1]
+import data_collector
+import data_processor
+import data_renderer
+
+try:
+    # reads token from external file to keep secret
+    with open("secret") as f: token = f.read().split("=")[1]
+except FileNotFoundError:
+    print('Make sure the secret file is in the working directory')
+    input()
 
 # User Input and Setup
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -44,20 +52,6 @@ f_name = input('> ')
 
 print()
 print('Let\'s get started!')
-
-print('Importing data collector...')
-import data_collector
-print('Done')
-
-print()
-print('Importing data processor...')
-import data_processor
-print('Done')
-
-print()
-print('Importing data renderer...')
-import data_renderer
-print('Done')
 
 # Data Collection
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------------

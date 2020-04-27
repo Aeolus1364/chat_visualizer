@@ -104,7 +104,7 @@ def twitch_reader(token, channel, time_step, max_time=0, max_msg=0, remove_dupli
                 break
             if max_time and elapsed_time > max_time:
                 break
-
+            
     except KeyboardInterrupt:
         pass
 
